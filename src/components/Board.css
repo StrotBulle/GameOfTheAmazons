@@ -1,0 +1,83 @@
+#board{
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    width: 600px;
+    height: 600px;
+    background-color: blue;
+    color: white;
+}
+
+.tile-black{
+    position: relative;
+    height: 100px;
+    width: 100px;
+    background-color: #769656;
+    color: 	#eeeed2;
+}
+
+.tile-white{
+    position: relative;
+    height: 100px;
+    width: 100px;
+    background-color: 	#eeeed2;
+    color: #769656;
+}
+
+.player-white{
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    border-radius: 500px;
+    border-color: white;
+    background-color: white;
+    z-index: 10;
+    top: 25%;
+    left: 25%;
+    border: 1px solid transparent;
+    border-color: black;
+}
+
+.player-black{
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    border-radius: 500px;
+    background-color: black;
+    z-index: 10;
+    top: 25%;
+    left: 25%;
+    border: 1px solid transparent;
+    border-color: white;
+}
+
+.pathButtons{
+    position: absolute;
+    width: 25%;
+    height: 25%;
+    border-radius: 500px;
+    background-color: gray;
+    z-index: 10;
+    top: 37.5%;
+    left: 37.5%;
+    border: 1px solid transparent;
+    border-color: black;
+}
+
+.pathButtons:hover {
+  background-color: rgb(61, 61, 61);
+}
+
+.pathButtons:focus {
+  box-shadow: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fire{
+    position: absolute;
+    width: 75%;
+    height: 75%;
+    z-index: 10;
+    top: 12.5%;
+    left: 12.5%;
+}
