@@ -42,20 +42,18 @@ export default function Board() {
 
     const [tile, setTile] = useState<Tile[][]>([[], [], [], [], [], []]);
 
-    const [activePlayerIndex, setActivePlayerIndex] = useState<number|undefined>(0)
+    const [activePlayerIndex, setActivePlayerIndex] = useState<number|undefined>(0);
 
     useEffect(() => {renderBoard();},[]);
 
     var tmp:number = activePlayerIndex as number;
     if(gameStatus === "preshoot"){
-        console.log(tile);
         showPath(tile[player[tmp].y][player[tmp].x]);
     }
 
      function renderBoard(){
 
             const nextTile:Tile[][] = [[], [], [], [], [], []]
-            console.log("rendere")
 
             for(let i = 0; i < boardWidth; i++){
                 for(let j = 0; j < boardHeight; j++){
@@ -85,8 +83,9 @@ export default function Board() {
             }
 
             setTile([...nextTile]);
-    }
 
+            // Belegung des Feldes
+    }
 
     function showPath(currentTile: Tile){
 
@@ -161,19 +160,24 @@ export default function Board() {
             //possibleMovesAmount++;
         }
 
+        // Wechsel des gamestaes
         if(gameStatus === "preshoot"){
             setGameStatus("shoot");
         }
-        
+
         setTile([...tile]);
     }
-    function action(currentPlayer: Player, currentTile: Tile) {
 
+
+    function action(currentPlayer: Player, currentTile: Tile) {
+        
+        //Wechsel gamesate auf preshoot und Ausführung move
         if (gameStatus === "move") {
             move(currentPlayer, currentTile);
             setGameStatus("preshoot");
         }
 
+        //Ausführung shoot und Wechsel auf move
         if (gameStatus === "shoot") {
             shoot(currentTile);
             if(turnState === "white"){
@@ -198,14 +202,18 @@ export default function Board() {
 
     function move(playerToMove: Player, currentTile: Tile) {
         
+        //ursprügliches tile wird free gesetzt
         tile[playerToMove.x][playerToMove.y].status = "free";
         player[activePlayerIndex as number] = {color: playerToMove.color, x: currentTile.x, y: currentTile.y};
+        //neues tile wird auf player gesetzt
         tile[playerToMove.x][playerToMove.y].status = "player";
 
+        //neues Rendern des Boards
         renderBoard();
     }
 
     function shoot( currentTile: Tile) {
+        //neues Feuer hinzufügen
         fire.push({x: currentTile.x, y: currentTile.y});
 
         renderBoard();
@@ -217,7 +225,7 @@ export default function Board() {
 
         switch(tile[i][j].status){
             case "player":{
-                /*
+
                 if((
                     (j+1 <= 5 && tile[i][j+1].status === "free") || 
                     (j-1 >= 0 && tile[i][j-1].status === "free") ||
@@ -226,14 +234,26 @@ export default function Board() {
                     (j+1 <= 5 && i+1 <= 5 && tile[i+1][j+1].status === "free") ||
                     (j+1 <= 5 && i-1 >= 0 && tile[i-1][j+1].status === "free") ||
                     (j-1 >= 0 && i-1 >= 0 && tile[i-1][j-1].status === "free") ||
-                    (j-1 >= 0 && i+1 <= 5 && tile[i+1][j-1].status === "free"))){
+                    (j-1 >= 0 && i+1 <= 5 && tile[i+1][j-1].status === "free"))||
+                    (j+1 <= 5 && tile[i][j+1].status === "legal") || 
+                    (j-1 >= 0 && tile[i][j-1].status === "legal") ||
+                    (i+1 <= 5 && tile[i+1][j].status === "legal") ||
+                    (i-1 >= 0 && tile[i-1][j].status === "legal") ||
+                    (j+1 <= 5 && i+1 <= 5 && tile[i+1][j+1].status === "legal") ||
+                    (j+1 <= 5 && i-1 >= 0 && tile[i-1][j+1].status === "legal") ||
+                    (j-1 >= 0 && i-1 >= 0 && tile[i-1][j-1].status === "legal") ||
+                    (j-1 >= 0 && i+1 <= 5 && tile[i+1][j-1].status === "legal")){
+
                         console.log("frei")
                     }
                     else{
-                        console.log(turnState + "verliert");
-                        console.log(player[colorPlayerIndex], tile[i][j])
+                        if(turnState === "black"){
+                            console.log("white" + " verliert");
+                        }
+                        if(turnState === "white"){
+                            console.log("black" + " verliert");
+                        }
                     }
-                    */
 
                 if((player[colorPlayerIndex].color === turnState && gameStatus === "move") ||
                 (player[colorPlayerIndex].color === turnState && gameStatus === "shoot" && colorPlayerIndex === activePlayerIndex)){
@@ -264,6 +284,9 @@ export default function Board() {
 
 
 // Cursor Parkplatz -------><-------
+
+
+
 
 
 
