@@ -59,3 +59,12 @@ export default function Board({ gameStatus, turnState, player, tile, activePlaye
 
     }))}</div>
 }
+
+
+// Cursor Parkplatz -------><-------
+
+
+
+
+
+
