@@ -1,0 +1,49 @@
+h1{
+    color:#769656;
+}
+
+.terminalContainer{
+    background-color: #302e2b;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.terminalContainerInner{
+    display: flex;
+    flex-direction: column;
+    margin: 5px 10px;
+}
+
+.terminalBox{
+    flex: 1;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    color: white;
+}
+
+.input{
+    background-color: #1e1e1b;
+    color: white;
+    border-radius: 10px;
+    width: 60%;
+    padding: 8px;
+    margin-top: 10px;
+    border: none;
+}
+
+.valueButton{
+    background-color: #1e1e1b;
+    color: white;
+    border: none;
+    font-weight: bold;
+    border-radius: 50px;
+    padding: 8px;
+    font-size: 16px;
+    padding: 5px 10px;
+    text-align: center;
+    display: inline-block;
+    margin: 4px 8px;
+    cursor: pointer;
+}

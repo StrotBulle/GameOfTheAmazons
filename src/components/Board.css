@@ -35,6 +35,7 @@
     left: 25%;
     border: 1px solid transparent;
     border-color: black;
+    color: black;
 }
 
 .player-black{
@@ -48,6 +49,7 @@
     left: 25%;
     border: 1px solid transparent;
     border-color: white;
+    color: white;
 }
 
 .pathButtons{

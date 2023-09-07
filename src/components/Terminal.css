@@ -1,0 +1,40 @@
+    .terminalScreen {
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: flex-start;
+    background-color: white;
+    padding: 10px;
+    width: 300px;
+    max-width: 80%;
+    height: 300px;
+    overflow: auto;
+  }
+  
+  .terminalScreen ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .terminalScreen li {
+    margin: 2px 0;
+  }
+
+  .success{
+    color: black;
+    font-weight: bold;
+  }
+
+  .error{
+    color: red;
+    font-weight: bold;
+  }
+  
+  .inputField {
+    border-radius: 10px;
+    width: 80%;
+    padding: 8px;
+    margin-top: 10px;
+  }
