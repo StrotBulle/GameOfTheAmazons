@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Route, Routes, Link } from 'react-router-dom';
 import './Terminal.css';
-import { playerColor, Tile, Player, letters, boardHeight, boardWidth, status} from "./Game";
+import { playerColor, Tile, Player, letters, status} from "./Game";
 
 type listClassNames = "error" | "success";
 
 
-export default function Terminal({values, setValues, turnState, setTurnState, showPath, action, move, shoot, tile, player, activePlayerIndex, gameStatus}:{
+export default function Terminal({values, setValues, turnState, setTurnState, showPath, action, move, shoot, tile, player, activePlayerIndex, gameStatus, setActivePlayerIndex, boardSize}:{
   values: string[], setValues: React.Dispatch<React.SetStateAction<string[]>>,
   turnState: playerColor, setTurnState: React.Dispatch<React.SetStateAction<playerColor>>,
   showPath: (currentTile: Tile) => void,
@@ -15,24 +16,27 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
   tile: Tile[][],
   player: Player[],
   activePlayerIndex: number| undefined,
-  gameStatus: status
+  gameStatus: status,
+  setActivePlayerIndex: React.Dispatch<React.SetStateAction<number | undefined>>,
+  boardSize: number;
 }){
 
-    const [inputValue, setInputValue] = useState(''); 
-    let listClassName: listClassNames = "success";
+    const [inputValue, setInputValue] = useState<string>(''); 
+    const [listClassName, setListClassName] = useState<string>("success");
 
     const handleInputChange = (event: any) => {
         setInputValue(event.target.value);
     };
 
     const handleInputSubmit = (event: any) => {
+      setListClassName("success");
         if (event.key === 'Enter') {
 
-          const regexMove = new RegExp("p" + "[1-" + (player.length + 1) + "]" + "[a-" + letters[boardWidth] + "][1-" + boardHeight + "]"); 
+          const regexMove = new RegExp("p" + "[1-" + (player.length + 1) + "]" + "[a-" + letters[boardSize] + "][1-" + boardSize + "]"); 
           let terminalMessage: string = "";
 
           if(inputValue === "/help"){
-            //RoutingElement for help
+            //<Link to="/Help"></Link>
           }
           else if(inputValue === "/surrender"){
             //gameEnd(turnstate);
@@ -44,26 +48,26 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
             //time += 10;
           } 
           else if(inputValue.match(regexMove)){
-            let playerTmp: Player = player[parseInt(inputValue.charAt(1)) - 1];
-            console.log(playerTmp + "   " + inputValue.charAt(1));
+            const playerTmp: Player = player[parseInt(inputValue.charAt(1)) - 1];
           
             if(playerTmp.color === turnState && (gameStatus !== "shoot" || parseInt(inputValue.charAt(1)) - 1 === activePlayerIndex)){
               showPath(tile[playerTmp.y][playerTmp.x]);
               if(tile[parseInt(inputValue.charAt(3)) - 1][letters.indexOf(inputValue.charAt(2))].status === "legal"){
+
                 action(playerTmp, tile[parseInt(inputValue.charAt(3)) - 1][letters.indexOf(inputValue.charAt(2))]);
               }
               else{
-                listClassName = "error";
+                setListClassName("error");
                 terminalMessage = "Feld ist nicht anspielbar!";
               }
             }
             else{
-              listClassName = "error";
+              setListClassName("error");
               terminalMessage = "Spieler ist nicht am Zug!";
             }
           }
           else{
-            listClassName = "error";
+            setListClassName("error");
             terminalMessage = "Fehler";
           }
 

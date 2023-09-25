@@ -4,9 +4,36 @@
     flex-direction: row;
   }
 
-.box {
+.blurred{
+  display: flex;
+  height: 100vh;
+  flex-direction: row;
+  -webkit-filter: blur(5px);
+  -moz-filter: blur(5px);
+  -o-filter: blur(5px);
+  -ms-filter: blur(5px);
+  filter: blur(5px);
+}
+
+.boxRow {
+  flex-direction: row;
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.boxColumn {
+  flex-direction: column;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: left;
+}
+
+.playerDisplay{
+  margin: 5px;
+  font-size: large;
+  font-weight: bold;
+  color: white;
 }

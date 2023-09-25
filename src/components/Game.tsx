@@ -2,21 +2,22 @@ import React, { useEffect, useState } from "react";
 import Board from './Board';
 import Terminal from './Terminal';
 import './Game.css';
+import { Games, User, GamesData } from "../App";
 
 export const letters: string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-export const boardWidth = 6;
-export const boardHeight = 6;
+
 
 type tileStatus = "fire" | "free" | "player" | "legal";
 export type playerColor = "white" | "black";
 export type status = "move" | "preshoot" | "shoot";
 
-interface Fire {
+export interface Fire {
     x: number;
     y: number;
 }
 
 export interface Player {
+    id: number;
     color: playerColor;
     x: number;
     y: number;
@@ -31,24 +32,155 @@ export interface Tile {
     index: string;
 }
 
-const fire: Fire[] = [];
+interface GamesReturn {
+    id: number;
+    maxTurnTime: number;
+    players: User[];
+    board: {
+        rows: number;
+        columns: number;
+        squares: number[][];
+    }
+    winningPlayer: number;
+    turnplayer: number;
+    turns: Turn[];
+}
 
-export default function Game(){
+interface Field {
+    row: number;
+    column: number;
+}
+
+interface Turn {
+    move: {
+        start: Field;
+        end: Field;
+    };
+    shot?: Field;
+}
+
+export default function Game({ boardSize, setBoardSize, tile, setTile, games, setGames, player, setPlayer, currentGameId, setCurrentGameId, gamesData }: {
+    boardSize: number,
+    tile: Tile[][],
+    setTile: React.Dispatch<React.SetStateAction<Tile[][]>>,
+    games: Games[],
+    setGames: React.Dispatch<React.SetStateAction<Games[]>>,
+    player: Player[],
+    setPlayer: React.Dispatch<React.SetStateAction<Player[]>>,
+    currentGameId: number | undefined,
+    setCurrentGameId: React.Dispatch<React.SetStateAction<number | undefined>>,
+    gamesData: GamesData[],
+    setBoardSize: React.Dispatch<React.SetStateAction<number>>
+}) {
     const [values, setValues] = useState<string[]>([]);
     const [gameStatus, setGameStatus] = useState<status>("move");
     const [turnState, setTurnState] = useState<playerColor>("white");
-    const [player, setPlayer] = useState<Player[]>([{ color: "white", y: 5, x: 1 }, { color: "white", y: 5, x: 4 }, { color: "black", y: 0, x: 1 }, { color: "black", y: 0, x: 4 }]);
-    const [tile, setTile] = useState<Tile[][]>([[], [], [], [], [], []]);
     const [activePlayerIndex, setActivePlayerIndex] = useState<number | undefined>(0);
+    const [gameData, setGameData] = useState<GamesReturn>();
+    const [user, setUser] = useState<User[]>();
+    const [isBlurred, setIsBlurred] = useState<boolean>(false);
+    const [turn, setTurn] = useState<Turn>();
+    const [fire, setFire] = useState<Fire[]>([]);
+    const [gameUsers, setGameUsers] = useState<User[]>([{ name: "Spieler 1", id: 0, controllable: true }, { name: "Spieler 2", id: 1, controllable: true }]);
+
+    useEffect(() => {
+
+        const fetchData = async () => {
+            const gameNumber = /Game\/(\d+)/; // Corrected regular expression
+
+            const match = window.location.pathname.match(gameNumber); // Use match() to extract the number
+            const gameId = match![1]; // Extract the number from the matched string
+            const url = `https://gruppe12.toni-barth.com/games/${gameId}`;
+
+            try {
+                const response = await fetch(url);
+                const newData = await response.json();
+                setGameData(newData);
+                setBoardSize(newData.board.squares.length)
+                setGameUsers([newData.players[0], newData.players[1]]);
+
+                const newPlayer: Player[] = [];
+                const newFire: Fire[] = []
+                for (let i = 0; i < newData.board.squares.length; i++) {
+                    for (let j = 0; j < newData.board.squares.length; j++) {
+                        switch (newData.board.squares[i][j]) {
+                            case -1:
+                                //free
+                                break;
+                            case -2:
+                                //fire
+                                newFire.push({ x: i, y: j });
+                                break;
+                            case 0:
+                                //black
+                                newPlayer.push({ id: newPlayer.length, color: "black", x: i, y: j });
+                                break;
+                            case 1:
+                                //white
+                                newPlayer.push({ id: newPlayer.length, color: "white", x: i, y: j });
+                                break;
+                        }
+                    }
+                }
+
+                for (let i = 0; i < newData.turns.length; i++) {
+                    const index = newPlayer.findIndex(item => item.x === newData.turns[i].move.start.row && item.y === newData.turns[i].move.start.column);
+                    newPlayer[index] = { id: newPlayer[index].id, x: newData.turns[i].move.end.row as number, y: newData.turns[i].move.end.column as number, color: newPlayer[index].color };
+                    newFire.push({ x: newData.turns[i].shot?.row as number, y: newData?.turns[i].shot?.column as number });
+                }
+
+                setPlayer([...newPlayer]);
+                setFire([...newFire]);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+
+        };
+
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (gameData) {
+            renderBoard();
+        }
+    }, [gameData]);
+
+    function postTurnData(turn: Turn, userId: number) {
+        const gameNumber = /Game\/(\d+)/;
+        const match = window.location.pathname.match(gameNumber);
+        const gameId = match![1];
+        const url = `https://gruppe12.toni-barth.com/move/${gameUsers[userId].id}/${gameId}`;
+        console.log(JSON.stringify(turn));
+
+        fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(turn),
+            headers: {
+                'Content-type': 'application/json',
+            },
+        })
+            .then((data) => data.json())
+            .then((json) => console.log(json))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
 
 
     function renderBoard() {
 
-        const nextTile: Tile[][] = [[], [], [], [], [], []]
+        let nextTile: Tile[][] = [[]];
 
-        for (let i = 0; i < boardWidth; i++) {
-            for (let j = 0; j < boardHeight; j++) {
-                nextTile[i].push({ status: "free", x: j, y: i, color: "", index: letters[i] + (j + 1) })
+        for (let i = 0; i < boardSize; i++) {
+            for (let j = 0; j < boardSize; j++) {
+                if (i >= nextTile.length) {
+                    const newArray = [...nextTile, []];
+                    nextTile = newArray;
+                }
+                nextTile[i].push({ status: "free", x: j, y: i, color: "", index: letters[i] + (j + 1) });
+
 
                 //FireCreation
                 for (let k = 0; k < fire.length; k++) {
@@ -80,10 +212,9 @@ export default function Game(){
 
     function showPath(currentTile: Tile) {
 
-
         //clear
-        for (let i = 0; i < boardWidth; i++) {
-            for (let j = 0; j < boardHeight; j++) {
+        for (let i = 0; i < boardSize; i++) {
+            for (let j = 0; j < boardSize; j++) {
                 if (tile[i][j].status === "legal") {
                     tile[i][j].status = "free";
                 }
@@ -96,7 +227,7 @@ export default function Game(){
 
         let i = 1;
         //down
-        while (currentTile.y + i < 6 && tile[currentTile.y + i][currentTile.x].status === "free") {
+        while (currentTile.y + i < boardSize && tile[currentTile.y + i][currentTile.x].status === "free") {
             tile[currentTile.y + i][currentTile.x].status = "legal";
             i++;
         }
@@ -108,7 +239,7 @@ export default function Game(){
         }
         i = 1;
         //right
-        while (currentTile.x + i < 6 && tile[currentTile.y][currentTile.x + i].status === "free") {
+        while (currentTile.x + i < boardSize && tile[currentTile.y][currentTile.x + i].status === "free") {
             tile[currentTile.y][currentTile.x + i].status = "legal";
             i++;
         }
@@ -126,19 +257,19 @@ export default function Game(){
         }
         i = 1;
         //diagonal right down
-        while (currentTile.x + i < 6 && currentTile.y - i >= 0 && tile[currentTile.y - i][currentTile.x + i].status === "free") {
+        while (currentTile.x + i < boardSize && currentTile.y - i >= 0 && tile[currentTile.y - i][currentTile.x + i].status === "free") {
             tile[currentTile.y - i][currentTile.x + i].status = "legal";
             i++;
         }
         i = 1;
         //diagonal left up
-        while (currentTile.x - i >= 0 && currentTile.y + i < 6 && tile[currentTile.y + i][currentTile.x - i].status === "free") {
+        while (currentTile.x - i >= 0 && currentTile.y + i < boardSize && tile[currentTile.y + i][currentTile.x - i].status === "free") {
             tile[currentTile.y + i][currentTile.x - i].status = "legal";
             i++;
         }
         i = 1;
         //diagonal right up
-        while (currentTile.x + i < 6 && currentTile.y + i < 6 && tile[currentTile.y + i][currentTile.x + i].status === "free") {
+        while (currentTile.x + i < boardSize && currentTile.y + i < boardSize && tile[currentTile.y + i][currentTile.x + i].status === "free") {
             tile[currentTile.y + i][currentTile.x + i].status = "legal";
             i++;
         }
@@ -170,10 +301,12 @@ export default function Game(){
             if (turnState === "white") {
                 setTurnState("black");
                 displayGameStatus("move", "black")
+                postTurnData(turn!, 1);
             }
             else {
                 setTurnState("white");
                 displayGameStatus("move", "white")
+                postTurnData(turn!, 0);
             }
 
             setGameStatus("move");
@@ -184,9 +317,19 @@ export default function Game(){
 
         //ursprügliches tile wird free gesetzt
         tile[playerToMove.x][playerToMove.y].status = "free";
-        player[activePlayerIndex as number] = { color: playerToMove.color, x: currentTile.x, y: currentTile.y };
+        player[playerToMove.id] = { id: playerToMove.id, color: playerToMove.color, x: currentTile.x, y: currentTile.y };
         //neues tile wird auf player gesetzt
         tile[playerToMove.x][playerToMove.y].status = "player";
+
+        let index = 1;
+        const fieldMoveOld: Field = { row: playerToMove.x, column: playerToMove.y };
+        const fieldMoveNew: Field = { row: currentTile.x, column: currentTile.y };
+        if (playerToMove.color === "black") {
+            index = 0;
+        }
+
+        setTurn({ move: { start: fieldMoveOld, end: fieldMoveNew } });
+
 
         setValues([...values, "p" + (activePlayerIndex as number + 1) + letters[currentTile.x] + (currentTile.y + 1)]);
         //neues Rendern des Boards
@@ -196,6 +339,10 @@ export default function Game(){
     function shoot(currentTile: Tile) {
         //neues Feuer hinzufügen
         fire.push({ x: currentTile.x, y: currentTile.y });
+        const fieldShot: Field = { row: currentTile.x, column: currentTile.y };
+        turn!.shot = fieldShot;
+
+        setValues([...values, "p" + (activePlayerIndex as number + 1) + letters[currentTile.x] + (currentTile.y + 1)]);
 
         renderBoard();
     }
@@ -207,22 +354,22 @@ export default function Game(){
                 let j = player[k].x;
                 let i = player[k].y;
                 if ((
-                    (j + 1 <= 5 && tile[i][j + 1].status === "free") ||
+                    (j + 1 <= boardSize - 1 && tile[i][j + 1].status === "free") ||
                     (j - 1 >= 0 && tile[i][j - 1].status === "free") ||
-                    (i + 1 <= 5 && tile[i + 1][j].status === "free") ||
+                    (i + 1 <= boardSize - 1 && tile[i + 1][j].status === "free") ||
                     (i - 1 >= 0 && tile[i - 1][j].status === "free") ||
-                    (j + 1 <= 5 && i + 1 <= 5 && tile[i + 1][j + 1].status === "free") ||
-                    (j + 1 <= 5 && i - 1 >= 0 && tile[i - 1][j + 1].status === "free") ||
+                    (j + 1 <= boardSize - 1 && i + 1 <= boardSize - 1 && tile[i + 1][j + 1].status === "free") ||
+                    (j + 1 <= boardSize - 1 && i - 1 >= 0 && tile[i - 1][j + 1].status === "free") ||
                     (j - 1 >= 0 && i - 1 >= 0 && tile[i - 1][j - 1].status === "free") ||
-                    (j - 1 >= 0 && i + 1 <= 5 && tile[i + 1][j - 1].status === "free")) ||
-                    (j + 1 <= 5 && tile[i][j + 1].status === "legal") ||
+                    (j - 1 >= 0 && i + 1 <= boardSize - 1 && tile[i + 1][j - 1].status === "free")) ||
+                    (j + 1 <= boardSize - 1 && tile[i][j + 1].status === "legal") ||
                     (j - 1 >= 0 && tile[i][j - 1].status === "legal") ||
-                    (i + 1 <= 5 && tile[i + 1][j].status === "legal") ||
+                    (i + 1 <= boardSize - 1 && tile[i + 1][j].status === "legal") ||
                     (i - 1 >= 0 && tile[i - 1][j].status === "legal") ||
-                    (j + 1 <= 5 && i + 1 <= 5 && tile[i + 1][j + 1].status === "legal") ||
-                    (j + 1 <= 5 && i - 1 >= 0 && tile[i - 1][j + 1].status === "legal") ||
+                    (j + 1 <= boardSize - 1 && i + 1 <= boardSize - 1 && tile[i + 1][j + 1].status === "legal") ||
+                    (j + 1 <= boardSize - 1 && i - 1 >= 0 && tile[i - 1][j + 1].status === "legal") ||
                     (j - 1 >= 0 && i - 1 >= 0 && tile[i - 1][j - 1].status === "legal") ||
-                    (j - 1 >= 0 && i + 1 <= 5 && tile[i + 1][j - 1].status === "legal")) {
+                    (j - 1 >= 0 && i + 1 <= boardSize - 1 && tile[i + 1][j - 1].status === "legal")) {
 
 
                 }
@@ -236,24 +383,33 @@ export default function Game(){
         }
     }
 
-    function displayGameStatus(currentGameState: status, currentTurnState: playerColor){
+    function displayGameStatus(currentGameState: status, currentTurnState: playerColor) {
         setValues([...values, `${currentGameState} ${currentTurnState}-player!`])
     }
 
 
+    return (
+        <div className={isBlurred ? 'blurred' : 'container'}>
 
-    return(
-        <div className="container">
+            <div className="boxRow" aria-label="Liste von Befehlen">Liste von Befehlen</div>
 
-            <div className="box" aria-label="Liste von Befehlen">Liste von Befehlen</div>
+            <div className="boxColumn" aria-label="Spielbrett">
+                <div className="playerDisplay">
+                    {gameUsers![1].name}
+                </div>
+                <div>
+                    {<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
+                        player={player} tile={tile} activePlayerIndex={activePlayerIndex} showPath={showPath} renderBoard={renderBoard} checkWinCondition={checkWinCondition}
+                        action={action} displayGameStatus={displayGameStatus} boardSize={boardSize} />}
+                </div>
+                <div className="playerDisplay">
+                    {gameUsers![0].name}
+                </div>
+            </div>
 
-            <div className="box" aria-label="Spielbrett">{<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
-            player={player} tile={tile} activePlayerIndex={activePlayerIndex} showPath={showPath} renderBoard={renderBoard} checkWinCondition={checkWinCondition} 
-            action={action} displayGameStatus={displayGameStatus}
-            />}</div>
-
-            <div className="box" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
-            showPath={showPath} action={action} move={move} shoot={shoot} tile={tile} player={player} activePlayerIndex={activePlayerIndex} gameStatus={gameStatus}/>}</div>
+            <div className="boxRow" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
+                showPath={showPath} action={action} move={move} shoot={shoot} tile={tile} player={player} activePlayerIndex={activePlayerIndex}
+                setActivePlayerIndex={setActivePlayerIndex} gameStatus={gameStatus} boardSize={boardSize} />}</div>
         </div>
     )
 }
