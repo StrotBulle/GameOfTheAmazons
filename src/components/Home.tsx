@@ -162,21 +162,21 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
 
     function devButton() {
         fetch(`https://gruppe12.toni-barth.com/players/18`, {
-          method: 'DELETE'
+            method: 'DELETE'
         })
-          .then((response) => {
-            if (response.status === 200) {
-              console.log('Spieler erfolgreich gelöscht');
-            } else {
-              console.error('Fehler beim Löschen des Spielers. Statuscode:', response.status);
-            }
-          })
-          .catch((error) => {
-            console.error('Fehler beim Löschen des Spielers:', error);
-          });
+            .then((response) => {
+                if (response.status === 200) {
+                    console.log('Spieler erfolgreich gelöscht');
+                } else {
+                    console.error('Fehler beim Löschen des Spielers. Statuscode:', response.status);
+                }
+            })
+            .catch((error) => {
+                console.error('Fehler beim Löschen des Spielers:', error);
+            });
 
-          localStorage.clear();
-      }
+        localStorage.clear();
+    }
 
 
     const handleInputName = (event: any) => {
@@ -191,20 +191,9 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
 
     return <div>
         <h1>Game of the Amazons</h1>
-        <div>
-            {gamesData && (
-                <ul>
-                    {gamesData.map((value, index) => (
-                        <li key={index} className="boards">Spielnummer: {gamesData[index].id}
-                            <Link to={'/Game/' + gamesData[index].id}><button className="actionButton" onClick={() => setCurrentGameId(gamesData[index].id)}>Spiel beitreten</button></Link>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
-        <button className="actionButton" onClick={() => setIsGameDivOpen(!isGameDivOpen)}>neues Spiel</button>
-        <button className="actionButton" onClick={() => devButton()}>DevButton</button>
         {isUserDivOpen && (
+        <div className="popup">
+            <div className="popup-content">
             <div className="terminalContainerInner">
                 <div className="terminalContainer">
                     <div className="terminalContainerInner">
@@ -219,11 +208,26 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                         /></div>
                     </div>
                 </div>
-                <button className="actionButton" onClick={() => { if (inputName !== ''){fetchPlayerDataSignIn()}}}>Anmelden</button>
+                <button className="actionButton" onClick={() => { if (inputName !== '') { fetchPlayerDataSignIn() } }}>Anmelden</button>
+            </div>
+            </div>
             </div>
 
-
         )}
+        <div>
+            {gamesData && (
+                <ul>
+                    {gamesData.map((value, index) => (
+                        <li key={index} className="boards">Spielnummer: {gamesData[index].id}
+                            <Link to={'/Game/' + gamesData[index].id}><button className="actionButton" onClick={() => setCurrentGameId(gamesData[index].id)}>Spiel beitreten</button></Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+        <button className="actionButton" onClick={() => setIsGameDivOpen(!isGameDivOpen)}>neues Spiel</button>
+        <button className="actionButton" onClick={() => devButton()}>DevButton</button>
+
         {isGameDivOpen && (
             <div className="terminalContainerInner">
                 <div className="terminalContainer">

@@ -391,7 +391,16 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
     return (
         <div className={isBlurred ? 'blurred' : 'container'}>
 
-            <div className="boxRow" aria-label="Liste von Befehlen">Liste von Befehlen</div>
+            <div className="boxRow" aria-label="Liste von Befehlen">
+                <div>
+                    <p>/help </p>
+                    <p>/home </p>
+                    <p>/surrender </p>
+                    <p>/time </p>
+                    <p>/giveTime </p>
+                    <p>/p </p>
+                </div>
+            </div>
 
             <div className="boxColumn" aria-label="Spielbrett">
                 <div className="playerDisplay">

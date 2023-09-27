@@ -3,8 +3,6 @@ import { Route, Routes, Link } from 'react-router-dom';
 import './Terminal.css';
 import { playerColor, Tile, Player, letters, status} from "./Game";
 
-type listClassNames = "error" | "success";
-
 
 export default function Terminal({values, setValues, turnState, setTurnState, showPath, action, move, shoot, tile, player, activePlayerIndex, gameStatus, setActivePlayerIndex, boardSize}:{
   values: string[], setValues: React.Dispatch<React.SetStateAction<string[]>>,

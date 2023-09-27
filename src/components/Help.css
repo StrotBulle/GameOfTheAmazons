@@ -5,3 +5,26 @@
 h1{
     color: #769656;
 }
+
+h2{
+    color:#769656;
+}
+
+.helpContainer{
+    background-color: #302e2b;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.commandContainerInner{
+    background-color: #302e2b;
+    display: flex;
+    justify-content: left;
+    flex-direction: row;
+}
+
+.command{
+    font-weight: bold;
+    color:#769656;
+}
