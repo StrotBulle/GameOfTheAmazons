@@ -109,7 +109,9 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                     tmpOffset = 0;
                 }
                 else {
-                    tmpOffset = 1;
+                    if(boardSize%2 === 0){
+                        tmpOffset = 1;
+                    }
                 }
                 x = i * 2 + tmpOffset - boardSize * tmpRow;
                 if (index === 0) {
@@ -122,7 +124,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                 squares[x][y] = index;
             }
             tmpRow = 0;
-            index = 1;//currentUser!.id;
+            index = 1;
         }
 
         const newGame: Games = { maxTurnTime: maxTurnTime, players: [currentUser!.id, selectedUser!.id], board: { gameSizeRows: boardSize, gameSizeColumns: boardSize, squares: squares } }
@@ -178,6 +180,33 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
         localStorage.clear();
     }
 
+    function lockOut() {
+
+        for(let i = 0; i < gamesData.length; i++){
+            for(let j = 0; j < 2; j++){
+                if(gamesData[i].players[j].id === currentUser?.id){
+                    //lose Game
+                }
+            }
+        }
+
+        fetch(`https://gruppe12.toni-barth.com/players/${currentUser?.id}`, {
+            method: 'DELETE'
+        })
+            .then((response) => {
+                if (response.status === 200) {
+                    console.log('Spieler erfolgreich gelöscht');
+                } else {
+                    console.error('Fehler beim Löschen des Spielers. Statuscode:', response.status);
+                }
+            })
+            .catch((error) => {
+                console.error('Fehler beim Löschen des Spielers:', error);
+            });
+
+        localStorage.clear();
+    }
+
 
     const handleInputName = (event: any) => {
         setInputName(event.target.value);
@@ -191,28 +220,28 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
 
     return <div>
         <h1>Game of the Amazons</h1>
+        <h2>{currentUser ? 'Welcome back, ' + currentUser?.name + '!' : ''}</h2>
         {isUserDivOpen && (
-        <div className="popup">
-            <div className="popup-content">
-            <div className="terminalContainerInner">
-                <div className="terminalContainer">
+            <div className="popup">
+                <div className="popup-content">
                     <div className="terminalContainerInner">
-                        <div className="terminalBox">Name:</div>
-                    </div>
-                    <div className="terminalContainerInner">
-                        <div className="terminalBox"><input className="input" aria-label="Namens Eingabe"
-                            type="text"
-                            value={inputName}
-                            onChange={handleInputName}
-                            placeholder="Hier Namen eingeben"
-                        /></div>
+                        <div className="terminalContainer">
+                            <div className="terminalContainerInner">
+                                <div className="terminalBox">Name:</div>
+                            </div>
+                            <div className="terminalContainerInner">
+                                <div className="terminalBox"><input className="input" aria-label="Namens Eingabe"
+                                    type="text"
+                                    value={inputName}
+                                    onChange={handleInputName}
+                                    placeholder="Hier Namen eingeben"
+                                /></div>
+                            </div>
+                        </div>
+                        <button className="actionButton" onClick={() => { if (inputName !== '') { fetchPlayerDataSignIn() } }}>Anmelden</button>
                     </div>
                 </div>
-                <button className="actionButton" onClick={() => { if (inputName !== '') { fetchPlayerDataSignIn() } }}>Anmelden</button>
             </div>
-            </div>
-            </div>
-
         )}
         <div>
             {gamesData && (
@@ -227,7 +256,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
         </div>
         <button className="actionButton" onClick={() => setIsGameDivOpen(!isGameDivOpen)}>neues Spiel</button>
         <button className="actionButton" onClick={() => devButton()}>DevButton</button>
-
+        <button className="actionButton" onClick={() => lockOut()}>Abmelden</button>
         {isGameDivOpen && (
             <div className="terminalContainerInner">
                 <div className="terminalContainer">
@@ -243,7 +272,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                             <button className="valueButton" onClick={() => { if (boardSize > 2) { setBoardSize(boardSize - 1) } }}>˅</button>
                         </div>
                         <div className="terminalBox">
-                            <button className="valueButton" onClick={() => { if (playerAmount < (boardSize * boardSize) / 4) { setPlayerAmount(playerAmount + 1) } }}>˄</button><p>{playerAmount}</p>
+                            <button className="valueButton" onClick={() => { let tmp = 1; if(boardSize%2 === 0){tmp = 0;}; if (playerAmount < (boardSize * boardSize - (boardSize * tmp))/4) { { setPlayerAmount(playerAmount + 1) } }}}>˄</button><p>{playerAmount}</p>
                             <button className="valueButton" onClick={() => { if (playerAmount > 1) { setPlayerAmount(playerAmount - 1) } }}>˅</button>
                         </div>
                         <div className="terminalBox">
@@ -262,7 +291,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                     </div>
 
                 </div>
-                <button className="actionButton" onClick={() => { if (playerAmount < (boardSize * boardSize) / 4) { postGame(createGame()); setIsGameDivOpen(false); } }}>Fertig</button>
+                <button className="actionButton" onClick={() => { let tmp = 1; if(boardSize%2 === 0){tmp = 0;}; if (playerAmount < (boardSize * boardSize - (boardSize * tmp))/4) { postGame(createGame()); setIsGameDivOpen(false); } }}>Fertig</button>
 
             </div>)}
     </div>

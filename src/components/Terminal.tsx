@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Route, Routes, Link } from 'react-router-dom';
+import { Route, Routes, Link, useNavigate } from 'react-router-dom';
 import './Terminal.css';
 import { playerColor, Tile, Player, letters, status} from "./Game";
 
@@ -19,6 +19,8 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
   boardSize: number;
 }){
 
+    const navigate = useNavigate();
+
     const [inputValue, setInputValue] = useState<string>(''); 
     const [listClassName, setListClassName] = useState<string>("success");
 
@@ -34,7 +36,10 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
           let terminalMessage: string = "";
 
           if(inputValue === "/help"){
-            //<Link to="/Help"></Link>
+            navigate('../help');
+          }
+          else if(inputValue === "/planb"){
+            window.location.href = 'https://www.hs-anhalt.de/studieren/im-studium/formalitaeten/exmatrikulation.html';
           }
           else if(inputValue === "/surrender"){
             //gameEnd(turnstate);

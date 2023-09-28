@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import Board from './Board';
 import Terminal from './Terminal';
 import './Game.css';
@@ -82,6 +82,9 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
     const [turn, setTurn] = useState<Turn>();
     const [fire, setFire] = useState<Fire[]>([]);
     const [gameUsers, setGameUsers] = useState<User[]>([{ name: "Spieler 1", id: 0, controllable: true }, { name: "Spieler 2", id: 1, controllable: true }]);
+    const [timer, setTimer] = useState(5);
+    const [isGameOver, setIsGameOver] = useState(false);
+    const [turnTime, setTurnTime] = useState<number>();
 
     useEffect(() => {
 
@@ -132,14 +135,45 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 setPlayer([...newPlayer]);
                 setFire([...newFire]);
 
+                setTurnTime(newData?.maxTurnTime/1000);
+                setTimer(newData?.maxTurnTime/1000);
+
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
+
 
         };
 
         fetchData();
     }, []);
+
+    useEffect(() => {
+        let timerId: NodeJS.Timeout | undefined = undefined;
+        
+        if (timer > 0 && !isGameOver && timerId === undefined) {
+            timerId = setInterval(() => {
+                setTimer((prevTimer) => prevTimer - 1);
+            }, 1000);
+        } else if (timer === 0) {
+            setIsGameOver(true);
+        }
+    
+        if (isGameOver && timerId !== undefined) {
+            clearInterval(timerId);
+        }
+    
+        // Wichtig: TimerId beim Unmounting des Components löschen
+        return () => {
+            if (timerId !== undefined) {
+                clearInterval(timerId);
+            }
+        };
+    }, [timer, isGameOver]);
+
+    useEffect(() => {
+        setTimer(turnTime!);
+    }, [turnState])
 
     useEffect(() => {
         if (gameData) {
@@ -389,8 +423,16 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
 
     return (
-        <div className={isBlurred ? 'blurred' : 'container'}>
+        <div>
+            {isGameOver && (
+                <div className="popup">
+                    <div className="popup-content">
+                        <button className="actionButton" onClick={() => { }}>Ok</button>
+                    </div>
+                </div>
 
+            )}
+            <div className={isGameOver ? "blurred" : "container"}>
             <div className="boxRow" aria-label="Liste von Befehlen">
                 <div>
                     <p>/help </p>
@@ -404,7 +446,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
             <div className="boxColumn" aria-label="Spielbrett">
                 <div className="playerDisplay">
-                    {gameUsers![1].name}
+                    {gameUsers![0].name}
                 </div>
                 <div>
                     {<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
@@ -412,13 +454,17 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                         action={action} displayGameStatus={displayGameStatus} boardSize={boardSize} />}
                 </div>
                 <div className="playerDisplay">
-                    {gameUsers![0].name}
+                    {gameUsers![1].name}
                 </div>
+                <div>Verbleibende Zeit: {timer}</div>
+                
             </div>
 
             <div className="boxRow" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
                 showPath={showPath} action={action} move={move} shoot={shoot} tile={tile} player={player} activePlayerIndex={activePlayerIndex}
                 setActivePlayerIndex={setActivePlayerIndex} gameStatus={gameStatus} boardSize={boardSize} />}</div>
+        </div>
+
         </div>
     )
 }
