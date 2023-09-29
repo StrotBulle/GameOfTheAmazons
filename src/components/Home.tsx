@@ -170,36 +170,6 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
             .catch(console.error);
     }
 
-    function devButton() {
-        fetch(`https://gruppe12.toni-barth.com/games/`, {
-            method: 'DELETE'
-        })
-            .then((response) => {
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Spieler erfolgreich gelöscht',
-                        text: 'Status-Code 200'
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Fehler beim Löschen des Spielers',
-                        text: 'Fehler-Code 400'
-                    });
-                }
-            })
-            .catch((error) => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Fehler beim Löschen des Spielers',
-                    text: 'Fehler-Code 400'
-                });
-            });
-
-        localStorage.clear();
-    }
-
     function lockOut() {
         console.log(currentUser?.id);
 
@@ -311,7 +281,6 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
             )}
         </div>
         <button className="actionButton" onClick={() => setIsGameDivOpen(!isGameDivOpen)}>neues Spiel</button>
-        <button className="actionButton" onClick={() => devButton()}>DevButton</button>
         <button className="actionButton" onClick={() => lockOut()}>Abmelden</button>
         <button className="actionButton" onClick={() => navigate('/help')}>Hilfe</button>
         {isGameDivOpen && (
