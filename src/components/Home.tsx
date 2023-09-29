@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import './Home.css';
 import { playerColor, Player } from "./Game";
 import { Games, GamesData, User } from "../App";
-import { Route, Routes, Link } from 'react-router-dom';
-
+import { Route, Routes, Link, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoardSize, maxTurnTime, setMaxTurnTime, games, setGames, boardSquares, setBoardSquares, player, setPlayer, currentGameId, setCurrentGameId, gamesData, setGamesData, users, setUsers }: {
     playerAmount: number,
@@ -30,6 +30,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
     const [isUserDivOpen, setIsUserDivOpen] = useState(true);
     const [currentUser, setCurrentUser] = useState<User>();
     const [selectedUser, setSelectedUser] = useState<User>(users[0]);
+    const navigate = useNavigate();
 
     const fetchData = async () => {
         const response = await fetch(`https://gruppe12.toni-barth.com/games/`);
@@ -58,7 +59,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
 
         setIsUserDivOpen(false);
         setCurrentUser({ id: users.length, name: inputName, controllable: true });
-        localStorage.setItem('user', JSON.stringify({ id: newData.players[newData.players.length - 1].id, name: inputName, controllable: true }))
+        localStorage.setItem('user', JSON.stringify({ id: newData.players[newData.players.length - 1].id + 1, name: inputName, controllable: true }))
     };
 
     const fetchPlayerData = async () => {
@@ -72,6 +73,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
         fetchPlayerData();
         const user = localStorage.getItem('user');
         console.log(user);
+        console.log(JSON.parse(user!));
         if (user) {
             setCurrentUser(JSON.parse(user));
             setIsUserDivOpen(false);
@@ -94,7 +96,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
 
         //create Players:
         let tmpRow: number = 0;
-        let index: number = 0;//selectedUser!.id;
+        let index: number = 0;
         let x: number = 0;
         let y: number = 0;
         let tmpOffset: number = 0;
@@ -109,7 +111,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                     tmpOffset = 0;
                 }
                 else {
-                    if(boardSize%2 === 0){
+                    if (boardSize % 2 === 0) {
                         tmpOffset = 1;
                     }
                 }
@@ -127,9 +129,15 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
             index = 1;
         }
 
-        const newGame: Games = { maxTurnTime: maxTurnTime, players: [currentUser!.id, selectedUser!.id], board: { gameSizeRows: boardSize, gameSizeColumns: boardSize, squares: squares } }
-        console.log(newGame);
-        return newGame;
+        
+        if(selectedUser){
+            const newGame: Games = { maxTurnTime: maxTurnTime, players: [currentUser!.id, selectedUser!.id], board: { gameSizeRows: boardSize, gameSizeColumns: boardSize, squares: squares } }
+            return newGame;
+        }
+        else{
+            const newGame: Games = { maxTurnTime: maxTurnTime, players: [currentUser!.id, users[0].id], board: { gameSizeRows: boardSize, gameSizeColumns: boardSize, squares: squares } }
+            return newGame;
+        }
     }
 
 
@@ -163,29 +171,67 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
     }
 
     function devButton() {
-        fetch(`https://gruppe12.toni-barth.com/players/18`, {
+        fetch(`https://gruppe12.toni-barth.com/games/`, {
             method: 'DELETE'
         })
             .then((response) => {
-                if (response.status === 200) {
-                    console.log('Spieler erfolgreich gelöscht');
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Spieler erfolgreich gelöscht',
+                        text: 'Status-Code 200'
+                    });
                 } else {
-                    console.error('Fehler beim Löschen des Spielers. Statuscode:', response.status);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Fehler beim Löschen des Spielers',
+                        text: 'Fehler-Code 400'
+                    });
                 }
             })
             .catch((error) => {
-                console.error('Fehler beim Löschen des Spielers:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fehler beim Löschen des Spielers',
+                    text: 'Fehler-Code 400'
+                });
             });
 
         localStorage.clear();
     }
 
     function lockOut() {
+        console.log(currentUser?.id);
 
-        for(let i = 0; i < gamesData.length; i++){
-            for(let j = 0; j < 2; j++){
-                if(gamesData[i].players[j].id === currentUser?.id){
-                    //lose Game
+        for (let i = 0; i < gamesData.length; i++) {
+            for (let j = 0; j < 2; j++) {
+                if (gamesData[i].players[j].id === currentUser?.id) {
+                    const url = `https://gruppe12.toni-barth.com/games/${i}`;
+                    fetch(url, {
+                        method: 'DELETE'
+                    })
+                        .then((response) => {
+                            if (response.ok) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Spiel erfolgreich gelöscht',
+                                    text: 'Status-Code 200'
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Fehler beim Löschen des Spieles',
+                                    text: 'Fehler-Code 400'
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Fehler beim Löschen des Spieles',
+                                text: 'Fehler-Code 400'
+                            });
+                        });
                 }
             }
         }
@@ -195,13 +241,25 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
         })
             .then((response) => {
                 if (response.status === 200) {
-                    console.log('Spieler erfolgreich gelöscht');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Spieler erfolgreich gelöscht',
+                        text: 'Status-Code 200'
+                    });
                 } else {
-                    console.error('Fehler beim Löschen des Spielers. Statuscode:', response.status);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Fehler beim Löschen des Spielers',
+                        text: 'Fehler-Code 400'
+                    });
                 }
             })
             .catch((error) => {
-                console.error('Fehler beim Löschen des Spielers:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fehler beim Löschen des Spielers',
+                    text: 'Fehler-Code 400'
+                });
             });
 
         localStorage.clear();
@@ -213,9 +271,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
     };
 
     const handleOptionChange = (event: any) => {
-        console.log(selectedUser);
         setSelectedUser(users[users.findIndex(item => item.name === event.target.value)]);
-        console.log(users[users.findIndex(item => item.name === event.target.value)].id);
     };
 
     return <div>
@@ -247,7 +303,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
             {gamesData && (
                 <ul>
                     {gamesData.map((value, index) => (
-                        <li key={index} className="boards">Spielnummer: {gamesData[index].id}
+                        <li key={index} className="boards">{gamesData[index].players[0].name} gegen {gamesData[index].players[1].name}
                             <Link to={'/Game/' + gamesData[index].id}><button className="actionButton" onClick={() => setCurrentGameId(gamesData[index].id)}>Spiel beitreten</button></Link>
                         </li>
                     ))}
@@ -257,6 +313,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
         <button className="actionButton" onClick={() => setIsGameDivOpen(!isGameDivOpen)}>neues Spiel</button>
         <button className="actionButton" onClick={() => devButton()}>DevButton</button>
         <button className="actionButton" onClick={() => lockOut()}>Abmelden</button>
+        <button className="actionButton" onClick={() => navigate('/help')}>Hilfe</button>
         {isGameDivOpen && (
             <div className="terminalContainerInner">
                 <div className="terminalContainer">
@@ -272,7 +329,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                             <button className="valueButton" onClick={() => { if (boardSize > 2) { setBoardSize(boardSize - 1) } }}>˅</button>
                         </div>
                         <div className="terminalBox">
-                            <button className="valueButton" onClick={() => { let tmp = 1; if(boardSize%2 === 0){tmp = 0;}; if (playerAmount < (boardSize * boardSize - (boardSize * tmp))/4) { { setPlayerAmount(playerAmount + 1) } }}}>˄</button><p>{playerAmount}</p>
+                            <button className="valueButton" onClick={() => { let tmp = 1; if (boardSize % 2 === 0) { tmp = 0; }; if (playerAmount < (boardSize * boardSize - (boardSize * tmp)) / 4) { { setPlayerAmount(playerAmount + 1) } } }}>˄</button><p>{playerAmount}</p>
                             <button className="valueButton" onClick={() => { if (playerAmount > 1) { setPlayerAmount(playerAmount - 1) } }}>˅</button>
                         </div>
                         <div className="terminalBox">
@@ -291,7 +348,7 @@ export default function Home({ playerAmount, setPlayerAmount, boardSize, setBoar
                     </div>
 
                 </div>
-                <button className="actionButton" onClick={() => { let tmp = 1; if(boardSize%2 === 0){tmp = 0;}; if (playerAmount < (boardSize * boardSize - (boardSize * tmp))/4) { postGame(createGame()); setIsGameDivOpen(false); } }}>Fertig</button>
+                <button className="actionButton" onClick={() => { let tmp = 1; if (boardSize % 2 === 0) { tmp = 0; }; if (playerAmount < (boardSize * boardSize - (boardSize * tmp)) / 4) { postGame(createGame()); setIsGameDivOpen(false); } }}>Fertig</button>
 
             </div>)}
     </div>

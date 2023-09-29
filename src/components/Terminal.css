@@ -22,13 +22,8 @@
     margin: 2px 0;
   }
 
-  .success{
+  .terminalList{
     color: black;
-    font-weight: bold;
-  }
-
-  .error{
-    color: red;
     font-weight: bold;
   }
   

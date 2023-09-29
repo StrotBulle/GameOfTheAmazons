@@ -1,8 +1,10 @@
 import React, { useEffect, useState, createContext, useContext } from "react";
+import { Route, Routes, Link, useNavigate } from 'react-router-dom';
 import Board from './Board';
 import Terminal from './Terminal';
 import './Game.css';
 import { Games, User, GamesData } from "../App";
+import Swal from 'sweetalert2';
 
 export const letters: string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 
@@ -85,6 +87,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
     const [timer, setTimer] = useState(5);
     const [isGameOver, setIsGameOver] = useState(false);
     const [turnTime, setTurnTime] = useState<number>();
+    const navigate = useNavigate();
 
     useEffect(() => {
 
@@ -404,8 +407,6 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                     (j + 1 <= boardSize - 1 && i - 1 >= 0 && tile[i - 1][j + 1].status === "legal") ||
                     (j - 1 >= 0 && i - 1 >= 0 && tile[i - 1][j - 1].status === "legal") ||
                     (j - 1 >= 0 && i + 1 <= boardSize - 1 && tile[i + 1][j - 1].status === "legal")) {
-
-
                 }
                 else {
                     tmp++;
@@ -421,13 +422,65 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         setValues([...values, `${currentGameState} ${currentTurnState}-player!`])
     }
 
+    function endScreen(){
+        const currentUser: User = JSON.parse(localStorage.getItem("user")!);
+
+        if(turnState === "white" && currentUser.id === gameUsers[0].id){
+            return(
+                <div>
+                    Du verlierst!
+                </div>
+            )
+        }
+        else{
+            return(
+                <div>
+                    Du gewinnst!
+                </div>
+            )
+        }
+    }
+
+    function deleteGame(){
+        const gameNumber = /Game\/(\d+)/;
+        const match = window.location.pathname.match(gameNumber); 
+        const gameId = match![1];
+        navigate('../');
+        const url = `https://gruppe12.toni-barth.com/games/${gameId}`;
+        fetch(url, {
+            method: 'DELETE'
+        })
+            .then((response) => {
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Spiel erfolgreich gelöscht',
+                        text: 'Status-Code 200'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Fehler beim Löschen des Spieles',
+                        text: 'Fehler-Code 400'
+                    });
+                }
+            })
+            .catch((error) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fehler beim Löschen des Spieles',
+                    text: 'Fehler-Code 400'
+                });
+            });
+    }
 
     return (
         <div>
             {isGameOver && (
                 <div className="popup">
                     <div className="popup-content">
-                        <button className="actionButton" onClick={() => { }}>Ok</button>
+                        {endScreen()}
+                        <button className="actionButton" onClick={() => {deleteGame()}}>Ok</button>
                     </div>
                 </div>
 
@@ -446,15 +499,15 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
             <div className="boxColumn" aria-label="Spielbrett">
                 <div className="playerDisplay">
-                    {gameUsers![0].name}
+                    {gameUsers![1].name}
                 </div>
                 <div>
                     {<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
                         player={player} tile={tile} activePlayerIndex={activePlayerIndex} showPath={showPath} renderBoard={renderBoard} checkWinCondition={checkWinCondition}
-                        action={action} displayGameStatus={displayGameStatus} boardSize={boardSize} />}
+                        action={action} displayGameStatus={displayGameStatus} boardSize={boardSize}/>}
                 </div>
                 <div className="playerDisplay">
-                    {gameUsers![1].name}
+                    {gameUsers![0].name}
                 </div>
                 <div>Verbleibende Zeit: {timer}</div>
                 
@@ -462,7 +515,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
             <div className="boxRow" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
                 showPath={showPath} action={action} move={move} shoot={shoot} tile={tile} player={player} activePlayerIndex={activePlayerIndex}
-                setActivePlayerIndex={setActivePlayerIndex} gameStatus={gameStatus} boardSize={boardSize} />}</div>
+                setActivePlayerIndex={setActivePlayerIndex} gameStatus={gameStatus} boardSize={boardSize} timer={timer} setTimer={setTimer} setIsGameOver={setIsGameOver}  />}</div>
         </div>
 
         </div>

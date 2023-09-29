@@ -42,13 +42,6 @@ function App() {
 
   return (
     <div className="app">
-      <>
-        <nav>
-          <Link to="/"><button id="nav">Startseite</button></Link>
-          <Link to="/Help"><button id="nav">Help</button></Link>
-          <Link to="/Game/1"><button id="nav">Spiel 1</button></Link>
-          <Link to="/Game/2"><button id="nav">Spiel 2</button></Link>
-        </nav>
         <Routes>
           <Route path='/' element={<Home playerAmount={playerAmount} setPlayerAmount={setPlayerAmount} boardSize={boardSize} setBoardSize={setBoardSize}
           maxTurnTime={maxTurnTime} setMaxTurnTime={setMaxTurnTime} games={games} setGames={setGames} boardSquares={boardSquares} setBoardSquares={setBoardSquares} 
@@ -60,7 +53,7 @@ function App() {
           
           <Route path='/Help' element={<Help />} />
         </Routes>
-      </>
+      <footer>Dieses Projekt ist an der HS Anhalt und unter der Aufsicht von Toni Barth entstanden.</footer>
     </div>
   );
 }
