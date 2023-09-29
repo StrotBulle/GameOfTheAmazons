@@ -2,29 +2,30 @@ import React, { useEffect } from "react";
 import './Board.css';
 import { letters, playerColor, status, Player, Tile } from "./Game";
 
-export default function Board({ gameStatus, turnState, player, tile, activePlayerIndex, showPath, renderBoard, checkWinCondition, action, displayGameStatus, boardSize }: {
+export default function Board({ gameStatus, turnState, player, tile, activePlayerIndex, showPath, checkWinCondition, action, displayGameStatus, boardSize }: {
     gameStatus: status,
     turnState: playerColor, setTurnState: React.Dispatch<React.SetStateAction<playerColor>>,
     tile: Tile[][],
     player: Player[],
     activePlayerIndex: number | undefined,
     showPath: (tile: Tile) => void,
-    renderBoard: () => void,
     checkWinCondition: () => void,
     action: (currentPlayer: Player, currentTile: Tile) => void,
     displayGameStatus: (currentGameState: status, currentTurnState: playerColor) => void,
     boardSize: number;
 }) {
 
+    //Start
     useEffect(() => { displayGameStatus("move", "white"); }, []);
 
+    //Zeigen des erlaubten Paths, wenn Figur bewegt wurde
     useEffect(() => {
         if (gameStatus === "preshoot") {
             showPath(tile[player[activePlayerIndex as number].y][player[activePlayerIndex as number].x]);
         }
     }, [gameStatus])
 
-
+    //Spielgröße in CSS formatieren
     const columCount = boardSize;
     document.documentElement.style.setProperty('--column-count', columCount.toString());
 

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, createContext, useContext } from "react";
-import { Route, Routes, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import Board from './Board';
 import Terminal from './Terminal';
 import './Game.css';
@@ -61,17 +61,12 @@ interface Turn {
     shot?: Field;
 }
 
-export default function Game({ boardSize, setBoardSize, tile, setTile, games, setGames, player, setPlayer, currentGameId, setCurrentGameId, gamesData }: {
+export default function Game({ boardSize, setBoardSize, tile, setTile, player, setPlayer }: {
     boardSize: number,
     tile: Tile[][],
     setTile: React.Dispatch<React.SetStateAction<Tile[][]>>,
-    games: Games[],
-    setGames: React.Dispatch<React.SetStateAction<Games[]>>,
     player: Player[],
     setPlayer: React.Dispatch<React.SetStateAction<Player[]>>,
-    currentGameId: number | undefined,
-    setCurrentGameId: React.Dispatch<React.SetStateAction<number | undefined>>,
-    gamesData: GamesData[],
     setBoardSize: React.Dispatch<React.SetStateAction<number>>
 }) {
     const [values, setValues] = useState<string[]>([]);
@@ -79,8 +74,6 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
     const [turnState, setTurnState] = useState<playerColor>("white");
     const [activePlayerIndex, setActivePlayerIndex] = useState<number | undefined>(0);
     const [gameData, setGameData] = useState<GamesReturn>();
-    const [user, setUser] = useState<User[]>();
-    const [isBlurred, setIsBlurred] = useState<boolean>(false);
     const [turn, setTurn] = useState<Turn>();
     const [fire, setFire] = useState<Fire[]>([]);
     const [gameUsers, setGameUsers] = useState<User[]>([{ name: "Spieler 1", id: 0, controllable: true }, { name: "Spieler 2", id: 1, controllable: true }]);
@@ -91,11 +84,14 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
     useEffect(() => {
 
+        //Der UseEffect wird nur einmal beim Laden der Seite durchgegangen.
+        //Dabei soll das jeweilige Spiel von der API angefordert werden
         const fetchData = async () => {
-            const gameNumber = /Game\/(\d+)/; // Corrected regular expression
 
-            const match = window.location.pathname.match(gameNumber); // Use match() to extract the number
-            const gameId = match![1]; // Extract the number from the matched string
+            //URL bekommen über die window.location.pathname und simplen Regex
+            const gameNumber = /Game\/(\d+)/; 
+            const match = window.location.pathname.match(gameNumber); 
+            const gameId = match![1]; 
             const url = `https://gruppe12.toni-barth.com/games/${gameId}`;
 
             try {
@@ -105,6 +101,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 setBoardSize(newData.board.squares.length)
                 setGameUsers([newData.players[0], newData.players[1]]);
 
+                //Befüllen der Arrays "player" und "fire"
                 const newPlayer: Player[] = [];
                 const newFire: Fire[] = []
                 for (let i = 0; i < newData.board.squares.length; i++) {
@@ -129,6 +126,9 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                     }
                 }
 
+
+                //hier werden nach dem ersten Befüllen von "player", die einzelnen Einträge verändert, wenn sie in einen der "turns" verändert wurden.
+                //Das Spiel wird dabei quasi "nachgespielt"
                 for (let i = 0; i < newData.turns.length; i++) {
                     const index = newPlayer.findIndex(item => item.x === newData.turns[i].move.start.row && item.y === newData.turns[i].move.start.column);
                     newPlayer[index] = { id: newPlayer[index].id, x: newData.turns[i].move.end.row as number, y: newData.turns[i].move.end.column as number, color: newPlayer[index].color };
@@ -138,8 +138,9 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 setPlayer([...newPlayer]);
                 setFire([...newFire]);
 
-                setTurnTime(newData?.maxTurnTime/1000);
-                setTimer(newData?.maxTurnTime/1000);
+                //setzen des Timers
+                setTurnTime(newData?.maxTurnTime / 1000);
+                setTimer(newData?.maxTurnTime / 1000);
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -152,8 +153,9 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
     }, []);
 
     useEffect(() => {
+        //hier wird die Logik des Timers definiert
         let timerId: NodeJS.Timeout | undefined = undefined;
-        
+
         if (timer > 0 && !isGameOver && timerId === undefined) {
             timerId = setInterval(() => {
                 setTimer((prevTimer) => prevTimer - 1);
@@ -161,12 +163,11 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         } else if (timer === 0) {
             setIsGameOver(true);
         }
-    
+
         if (isGameOver && timerId !== undefined) {
             clearInterval(timerId);
         }
-    
-        // Wichtig: TimerId beim Unmounting des Components löschen
+
         return () => {
             if (timerId !== undefined) {
                 clearInterval(timerId);
@@ -184,6 +185,9 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         }
     }, [gameData]);
 
+
+    //die Funktion "postTurnData" posted den jeweiligen "turn" an die API
+    //Leider ist die Funktion noch nicht einsatzbereit, da wir ständig einen ErrorCode von 400 bekommen
     function postTurnData(turn: Turn, userId: number) {
         const gameNumber = /Game\/(\d+)/;
         const match = window.location.pathname.match(gameNumber);
@@ -202,16 +206,22 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
             .then((json) => console.log(json))
             .catch((error) => {
                 console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fehler beim Löschen des Spieles',
+                    text: 'Fehler-Code 400'
+                });
             });
     }
 
-
+    //Die Funktion "renderBoard" rendert das Spielbrett, wobei es die vorher befüllten Arrays "player" und "fire" benutzt
     function renderBoard() {
 
         let nextTile: Tile[][] = [[]];
 
         for (let i = 0; i < boardSize; i++) {
             for (let j = 0; j < boardSize; j++) {
+                //Befüllen mit "Free"-Feldern
                 if (i >= nextTile.length) {
                     const newArray = [...nextTile, []];
                     nextTile = newArray;
@@ -219,13 +229,13 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 nextTile[i].push({ status: "free", x: j, y: i, color: "", index: letters[i] + (j + 1) });
 
 
-                //FireCreation
+                //Befüllen mit "Fire"-Feldern
                 for (let k = 0; k < fire.length; k++) {
                     if (fire[k].y === i && fire[k].x === j) {
                         nextTile[i][j].status = "fire";
                     }
                 }
-                //PlayerCreation
+                //Befüllen mit "Player"-Feldern
                 for (let k = 0; k < player.length; k++) {
                     if (player[k].y === i && player[k].x === j) {
                         nextTile[i][j].status = "player";
@@ -233,7 +243,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                     }
                 }
 
-                //BoardCreation
+                //Prüfen, welche Felder schwarz und welche weiß sein sollen
                 if ((i + j) % 2 === 0) {
                     nextTile[i][j].color = "tile-white";
                 }
@@ -246,10 +256,10 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         setTile([...nextTile]);
     }
 
-
+    //Die Funktion "showPath" setzt alle Felder, die ein Spieler anspielen darf auf "Legal"
     function showPath(currentTile: Tile) {
 
-        //clear
+        //Alle potentiellen vorher gesetzten "Legal"-Felder wieder auf "Free" setzen
         for (let i = 0; i < boardSize; i++) {
             for (let j = 0; j < boardSize; j++) {
                 if (tile[i][j].status === "legal") {
@@ -257,8 +267,6 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 }
             }
         }
-
-        //possibleMovesAmount = 0;
 
         setActivePlayerIndex(currentTile.playerIndex);
 
@@ -323,7 +331,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         setTile([...tile]);
     }
 
-
+    //Due Funktion "action" regelt den Ablauf der "turns"
     function action(currentPlayer: Player, currentTile: Tile) {
 
         //Wechsel gamesate auf preshoot und Ausführung move
@@ -350,6 +358,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         }
     }
 
+    //Bewegt den Spieler von seiner Start- zu seiner Zielposition
     function move(playerToMove: Player, currentTile: Tile) {
 
         //ursprügliches tile wird free gesetzt
@@ -367,23 +376,27 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
 
         setTurn({ move: { start: fieldMoveOld, end: fieldMoveNew } });
 
-
+        //Ausgabe des Zuges in der Konsole nochmal sichtbar
         setValues([...values, "p" + (activePlayerIndex as number + 1) + letters[currentTile.x] + (currentTile.y + 1)]);
         //neues Rendern des Boards
         renderBoard();
     }
 
+    //Regelt die Logik des Verschießens des Pfeiles
     function shoot(currentTile: Tile) {
         //neues Feuer hinzufügen
         fire.push({ x: currentTile.x, y: currentTile.y });
         const fieldShot: Field = { row: currentTile.x, column: currentTile.y };
         turn!.shot = fieldShot;
 
+        //Ausgabe des Zuges in der Konsole nochmal sichtbar
         setValues([...values, "p" + (activePlayerIndex as number + 1) + letters[currentTile.x] + (currentTile.y + 1)]);
 
         renderBoard();
     }
 
+
+    //"checkWinCondition" prüft, ob ein Spieler noch ziehen kann. Wenn ein Spieler nicht mehr ziehen kann, verliert dieser.
     function checkWinCondition() {
         let tmp = 0;
         for (let k = 0; k < player.length; k++) {
@@ -414,7 +427,7 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
             }
         }
         if (tmp === player.length / 2) {
-            console.log("Player " + turnState + " verliert")
+            setIsGameOver(true);
         }
     }
 
@@ -422,18 +435,20 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         setValues([...values, `${currentGameState} ${currentTurnState}-player!`])
     }
 
-    function endScreen(){
+
+    //Erstellung des EndScreens
+    function endScreen() {
         const currentUser: User = JSON.parse(localStorage.getItem("user")!);
 
-        if(turnState === "white" && currentUser.id === gameUsers[0].id){
-            return(
+        if (turnState === "white" && currentUser.id === gameUsers[0].id) {
+            return (
                 <div>
                     Du verlierst!
                 </div>
             )
         }
-        else{
-            return(
+        else {
+            return (
                 <div>
                     Du gewinnst!
                 </div>
@@ -441,9 +456,10 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
         }
     }
 
-    function deleteGame(){
+    //löscht das Spiel
+    function deleteGame() {
         const gameNumber = /Game\/(\d+)/;
-        const match = window.location.pathname.match(gameNumber); 
+        const match = window.location.pathname.match(gameNumber);
         const gameId = match![1];
         navigate('../');
         const url = `https://gruppe12.toni-barth.com/games/${gameId}`;
@@ -480,43 +496,43 @@ export default function Game({ boardSize, setBoardSize, tile, setTile, games, se
                 <div className="popup">
                     <div className="popup-content">
                         {endScreen()}
-                        <button className="actionButton" onClick={() => {deleteGame()}}>Ok</button>
+                        <button className="actionButton" onClick={() => { deleteGame() }}>Ok</button>
                     </div>
                 </div>
 
             )}
             <div className={isGameOver ? "blurred" : "container"}>
-            <div className="boxRow" aria-label="Liste von Befehlen">
-                <div>
-                    <p>/help </p>
-                    <p>/home </p>
-                    <p>/surrender </p>
-                    <p>/time </p>
-                    <p>/giveTime </p>
-                    <p>/p </p>
+                <div className="boxRow" aria-label="Liste von Befehlen">
+                    <div>
+                        <p>/help </p>
+                        <p>/home </p>
+                        <p>/surrender </p>
+                        <p>/time </p>
+                        <p>/giveTime </p>
+                        <p>/p </p>
+                    </div>
                 </div>
-            </div>
 
-            <div className="boxColumn" aria-label="Spielbrett">
-                <div className="playerDisplay">
-                    {gameUsers![1].name}
-                </div>
-                <div>
-                    {<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
-                        player={player} tile={tile} activePlayerIndex={activePlayerIndex} showPath={showPath} renderBoard={renderBoard} checkWinCondition={checkWinCondition}
-                        action={action} displayGameStatus={displayGameStatus} boardSize={boardSize}/>}
-                </div>
-                <div className="playerDisplay">
-                    {gameUsers![0].name}
-                </div>
-                <div>Verbleibende Zeit: {timer}</div>
-                
-            </div>
+                <div className="boxColumn" aria-label="Spielbrett">
+                    <div className="playerDisplay">
+                        {gameUsers![1].name}
+                    </div>
+                    <div>
+                        {<Board gameStatus={gameStatus} turnState={turnState} setTurnState={setTurnState}
+                            player={player} tile={tile} activePlayerIndex={activePlayerIndex} showPath={showPath} checkWinCondition={checkWinCondition}
+                            action={action} displayGameStatus={displayGameStatus} boardSize={boardSize} />}
+                    </div>
+                    <div className="playerDisplay">
+                        {gameUsers![0].name}
+                    </div>
+                    <div>Verbleibende Zeit: {timer}</div>
 
-            <div className="boxRow" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
-                showPath={showPath} action={action} move={move} shoot={shoot} tile={tile} player={player} activePlayerIndex={activePlayerIndex}
-                setActivePlayerIndex={setActivePlayerIndex} gameStatus={gameStatus} boardSize={boardSize} timer={timer} setTimer={setTimer} setIsGameOver={setIsGameOver}  />}</div>
-        </div>
+                </div>
+
+                <div className="boxRow" aria-label="Konsole">{<Terminal values={values} setValues={setValues} turnState={turnState} setTurnState={setTurnState}
+                    showPath={showPath} action={action} tile={tile} player={player} activePlayerIndex={activePlayerIndex} gameStatus={gameStatus} boardSize={boardSize}
+                    timer={timer} setTimer={setTimer} setIsGameOver={setIsGameOver} />}</div>
+            </div>
 
         </div>
     )

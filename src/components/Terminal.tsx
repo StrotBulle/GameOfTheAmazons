@@ -1,21 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { Route, Routes, Link, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import {useNavigate } from 'react-router-dom';
 import './Terminal.css';
 import { playerColor, Tile, Player, letters, status} from "./Game";
 
 
-export default function Terminal({values, setValues, turnState, setTurnState, showPath, action, move, shoot, tile, player, activePlayerIndex, gameStatus, setActivePlayerIndex, boardSize, timer, setTimer, setIsGameOver}:{
+export default function Terminal({values, setValues, turnState, setTurnState, showPath, action, tile, player, activePlayerIndex, gameStatus,  boardSize, timer, setTimer, setIsGameOver}:{
   values: string[], setValues: React.Dispatch<React.SetStateAction<string[]>>,
   turnState: playerColor, setTurnState: React.Dispatch<React.SetStateAction<playerColor>>,
   showPath: (currentTile: Tile) => void,
   action: (currentPlayer: Player, currentTile: Tile) => void,
-  move: (playerToMove: Player, currentTile: Tile) => void,
-  shoot: (currentTile: Tile) => void,
   tile: Tile[][],
   player: Player[],
   activePlayerIndex: number| undefined,
   gameStatus: status,
-  setActivePlayerIndex: React.Dispatch<React.SetStateAction<number | undefined>>,
   boardSize: number,
   timer: number,
   setTimer: React.Dispatch<React.SetStateAction<number>>,
@@ -30,6 +27,7 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
         setInputValue(event.target.value);
     };
 
+    //Regelt die jeweiligen Befehle die ins Terminal eingegeben werden
     const handleInputSubmit = (event: any) => {
         if (event.key === 'Enter') {
 
@@ -37,26 +35,33 @@ export default function Terminal({values, setValues, turnState, setTurnState, sh
           let terminalMessage: string = "";
 
           if(inputValue === "/help"){
+            //navigiert zu '/help'
             navigate('../help');
           }
           else if(inputValue === "/planb"){
+            //Plan B
             window.location.href = 'https://www.hs-anhalt.de/studieren/im-studium/formalitaeten/exmatrikulation.html';
           }
           else if(inputValue === "/surrender"){
+            //aufgeben des Spielers
             terminalMessage = "Du verlierst!"
             setIsGameOver(true);
           }
           else if(inputValue === "/time"){
+            //gibt die Zeit zurück
             terminalMessage = timer.toString() + " Sekunden übrig.";
           }
           else if(inputValue === "/givetime"){
+            //gibt den Gegner 10 Sekunden mehr Überlegungszeit für seinen Zug
             setTimer(timer + 10);
             terminalMessage = "+ 10 Sekunden";
           }
           else if(inputValue === "/home"){
+            //navigiert zur Startseite
             navigate('../');
           }
           else if(inputValue.match(regexMove)){
+            //regelt das Bewegen/Schießen des ausgewählten Spielers
             const playerTmp: Player = player[parseInt(inputValue.charAt(2)) - 1];
           
             if(playerTmp.color === turnState && (gameStatus !== "shoot" || parseInt(inputValue.charAt(2)) - 1 === activePlayerIndex)){

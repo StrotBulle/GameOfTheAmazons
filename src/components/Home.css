@@ -91,4 +91,11 @@ h1{
     -ms-filter: blur(5px);
     filter: blur(5px);
 }
+
+@media (max-width: 1300px) {
+    .container {
+      flex-direction: column;
+      margin: 0 auto; /* Horizontale Zentrierung */
+    }
+}
   
